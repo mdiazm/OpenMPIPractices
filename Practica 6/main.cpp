@@ -16,10 +16,15 @@ int main(int argc, char **argv){
     // Number of the active process
     int rank = MPI::COMM_WORLD.Get_rank();
 
+    // If size != 16 (4 * 4) processes, finalize
+    if (size != (4 /*rows*/ * 4 /*cols*/)){
+        MPI_Finalize();
+    }
+
     // Create new cartesian topology from new communicator
     MPI_Comm cartComm;
     int dims[DIMS] = {4/* rows */, 4 /* cols */};
-    int nDims[DIMS] = {0, 1}; // Not circular in any dimension
+    int nDims[DIMS] = {0, 0}; // Not circular in any dimension
     MPI_Cart_create(MPI_COMM_WORLD, 2, dims, nDims, true, &cartComm);
 
     // Get ranks of the preceeding and following processes

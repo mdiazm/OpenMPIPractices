@@ -95,8 +95,6 @@ int main(int argc, char **argv){
     // Perform multiplication
     multiply(A, B, C, numberOfCols, numberOfCols);
 
-
-
     // Catch results on ROOT_PROC
     MPI_Gather(&C, SIZE, MPI_INT, &C + rank * SIZE, SIZE, MPI_INT, ROOT_PROC, MPI_COMM_WORLD);
 

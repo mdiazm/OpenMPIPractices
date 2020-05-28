@@ -94,6 +94,10 @@ int main(int argc, char **argv){
     int numCells = SIZE * SIZE;
     int cellsPerWorker = std::ceil(numCells / workers);
 
+    if (numCells < workers){
+        MPI_Finalize();
+    }
+
     // Last worker will have to calculate a fewer number of cells.
     if (rank == workers -1) {
         // If last worker
