@@ -31,7 +31,7 @@ int main(int argc, char **argv){
 
     int contributes = 0;
 
-    if(distance < RADIUS) {
+    if(distance <= RADIUS) {
         contributes = 1;
     }
 
