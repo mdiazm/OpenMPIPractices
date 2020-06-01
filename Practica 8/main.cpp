@@ -8,13 +8,14 @@
 
 #define NUMLINES 80000
 #define CHAR_PER_LINE 14
+#define ROOT 0
 
 using namespace std;
 
 struct Item {
-    int idMovie;
-    int rating;
     int idUser;
+    int idMovie;
+    double rating;
 };
 
 void printString(char* str, int count){
@@ -84,8 +85,6 @@ std::vector<Item> getItems(const std::vector<std::string>& lines){
     return items;
 }
 
-
-
 int main(int argc, char **argv){
     // MPI initialization
     MPI_Init(&argc, &argv);
@@ -106,7 +105,7 @@ int main(int argc, char **argv){
 
     // Read file
     int linesPerWorker = NUMLINES / size;
-    int numBytes = linesPerWorker * CHAR_PER_LINE * sizeof(char);
+    int numBytes = linesPerWorker * CHAR_PER_LINE * sizeof(char); // Number of bytes handled by each process
     char * buffer = new char[numBytes];
 
     // Move pointer to data which is going to be read
@@ -120,8 +119,34 @@ int main(int argc, char **argv){
 
     // Split each line into: idUser, idMovie, rating and store that values in Item struct.
     std::vector<Item> items = getItems(lines);
+    int itemsWorker = items.size();
 
     // Send all values to root process
+    // Create struct type
+    MPI_Datatype itemType;
+    MPI_Datatype types[3] = {MPI_INT, MPI_INT, MPI_DOUBLE};
+    int longBlock[3] = {1, 1, 1};
+    MPI_Aint offset[3];
+    offset[0] = offsetof(Item, idUser);
+    offset[1] = offsetof(Item, idMovie);
+    offset[2] = offsetof(Item, rating);
+
+    MPI_Type_create_struct(3, longBlock, offset, types, &itemType);
+    MPI_Type_commit(&itemType);
+
+    // Where to receive data in root process
+    Item itemsRecv[NUMLINES];
+
+    // Send all data to root process
+    MPI_Gather(items.data(), itemsWorker, itemType, itemsRecv, itemsWorker, itemType, ROOT, MPI_COMM_WORLD);
+
+    // printf("Process: %d User: %d Movie: %d Rating: %f\n", rank, itemsRecv[0].idUser, itemsRecv[0].idMovie, itemsRecv[0].rating);
+
+    // Group data by movie in a matrix
+    vector<vector<Item>> ratings(NUMLINES);
+    for(Item &item: itemsRecv){
+        ratings[item.idMovie].push_back
+    }
 
     // Close file
     MPI_File_close(&file);
