@@ -211,9 +211,12 @@ int main(int argc, char **argv){
 
             // Send to node the number of movies that have to look for
             MPI_Send(&countToTransfer, 1, MPI_INT, i, 0, MPI_COMM_WORLD); // Ssend to wait for the receipment
-            MPI_Send(&transferData, countToTransfer, MPI_INT, i, 0, MPI_COMM_WORLD);
+            MPI_Send(transferData, countToTransfer, MPI_INT, i, 0, MPI_COMM_WORLD);
         }
     }
+
+    // Broadcast initial matrix to all processes
+    MPI_Bcast(itemsRecv, NUMLINES, itemType, ROOT, MPI_COMM_WORLD);
 
     if (rank != ROOT){
         // This number will be sended by ROOT PROC
@@ -221,11 +224,28 @@ int main(int argc, char **argv){
 
         // Receive number of movies to look for (indices) and evaluations of each (amount of lines that must be read again)
         MPI_Recv(&moviesToCompute, 1, MPI_INT, ROOT, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        //printf("Rank %d received %d\n", rank, moviesToCompute);
+        printf("Rank %d received %d\n", rank, moviesToCompute);
 
+        // recvData contains index, numRatings for each movie. 
         int * recvData = new int[moviesToCompute];
 
         MPI_Recv(recvData, moviesToCompute, MPI_INT, ROOT, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+        // The real number of movies to compute is moviesToCompute/2 because both index in itemsRecv and number of movies are included.
+        int numberOfMovies = moviesToCompute/2;
+        for(int i = 0; i < numberOfMovies; i++){
+            int index = recvData[i * 2];
+            int numberOfRatings = recvData[i * 2 + 1];
+            int movieId = itemsRecv[index].idMovie;
+            float summa = 0;
+            for (int j = 0; j < numberOfRatings; j++){
+                summa += itemsRecv[index + j].rating;
+            }
+
+            // Calculate mean for this movie
+            summa /= numberOfRatings;
+            printf("Movie %d scored %d mean %f\n", movieId, numberOfRatings, summa);
+        }
     }
     // Close file
     MPI_File_close(&file);
