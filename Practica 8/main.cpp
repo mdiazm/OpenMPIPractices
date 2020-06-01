@@ -3,6 +3,8 @@
 #include <string>
 #include <sstream>
 #include <vector>
+#include <algorithm>
+#include <map>
 
 /*  Practice 8  */
 
@@ -16,6 +18,10 @@ struct Item {
     int idUser;
     int idMovie;
     double rating;
+
+    static bool compare(const Item &a, const Item &b){
+        return a.idMovie < b.idMovie;
+    };
 };
 
 void printString(char* str, int count){
@@ -26,6 +32,14 @@ void printString(char* str, int count){
             printf("%c", str[i]);
         }
     }
+}
+
+void printArray(int* arr, int count){
+    for(int i = 0; i < count; i+=2){
+        printf("%d %d,", arr[i], arr[i+1]);
+    }
+
+    printf("\n");
 }
 
 std::string trim(const string& str){
@@ -85,6 +99,10 @@ std::vector<Item> getItems(const std::vector<std::string>& lines){
     return items;
 }
 
+bool sortbysec(const pair<int, int> &a, const pair<int, int> &b){
+    return a.second > b.second;
+}
+
 int main(int argc, char **argv){
     // MPI initialization
     MPI_Init(&argc, &argv);
@@ -142,12 +160,73 @@ int main(int argc, char **argv){
 
     // printf("Process: %d User: %d Movie: %d Rating: %f\n", rank, itemsRecv[0].idUser, itemsRecv[0].idMovie, itemsRecv[0].rating);
 
-    // Group data by movie in a matrix
-    vector<vector<Item>> ratings(NUMLINES);
-    for(Item &item: itemsRecv){
-        ratings[item.idMovie].push_back
+    if (rank == ROOT){
+        // Group data by movie in a matrix
+        vector<vector<Item>> ratings(NUMLINES);
+        map<int, int> indices; // Index of the movie in itemsRecv array. This will ease the distribution of the data in the processes.
+        int previousId = -1;
+        int count = 0;
+
+        std::sort(itemsRecv, itemsRecv + NUMLINES, Item::compare); // Even though processes send data in an ordered way, movies id are not naturally sorted.
+
+        for(Item &item: itemsRecv){
+            ratings[item.idMovie].push_back(item);
+            if (item.idMovie != previousId){
+                previousId = item.idMovie;
+                indices.insert(pair<int,int>(item.idMovie, count)); // Map with idMovie, index in initial array
+            }
+            count ++;
+        }
+
+        vector<std::pair<int, int>> idRatings;
+        for(int i = 0; i < ratings.size(); i++){
+            if(ratings[i].size() >= 20){
+                idRatings.push_back(std::pair<int, int>(i, ratings[i].size()));
+            }
+        }
+        //printf("Number of movies: %d\n", idRatings.size());
+
+        // Sort movies by number of ratings done
+        sort(idRatings.begin(), idRatings.end(), sortbysec);
+
+        // Distribute data to each process
+        vector<vector<pair<int, int>>> movies_workers(size); // id, numMovies which are going to be calculated by each process
+        int worker = 0;
+        for(int i = 0; i < idRatings.size(); i++){
+            movies_workers[worker + 1].push_back(pair<int, int>(/*index*/indices[idRatings[i].first], /*lines to read*/idRatings[i].second));
+            worker = (worker + 1) % (size-1);
+        }
+
+        // Send data to every process
+        for(int i = 1; i < movies_workers.size(); i++){
+            printf("worker %d num_movies %d\n", i, movies_workers[i].size());
+
+            int countToTransfer = movies_workers[i].size() * 2; // Including both elements in pairs
+            int * transferData = new int[countToTransfer];
+
+            for (int j = 0; j < movies_workers[i].size(); j++){
+                transferData[j * 2] = movies_workers[i][j].first;
+                transferData[j * 2 + 1] = movies_workers[i][j].second;
+            }
+
+            // Send to node the number of movies that have to look for
+            MPI_Send(&countToTransfer, 1, MPI_INT, i, 0, MPI_COMM_WORLD); // Ssend to wait for the receipment
+            MPI_Send(&transferData, countToTransfer, MPI_INT, i, 0, MPI_COMM_WORLD);
+        }
     }
 
+    if (rank != ROOT){
+        // This number will be sended by ROOT PROC
+        int moviesToCompute = 0;
+
+        // Receive number of movies to look for (indices) and evaluations of each (amount of lines that must be read again)
+        MPI_Recv(&moviesToCompute, 1, MPI_INT, ROOT, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        //printf("Rank %d received %d\n", rank, moviesToCompute);
+
+        int * recvData = new int[moviesToCompute];
+
+        MPI_Recv(recvData, moviesToCompute, MPI_INT, ROOT, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    }
     // Close file
     MPI_File_close(&file);
 
