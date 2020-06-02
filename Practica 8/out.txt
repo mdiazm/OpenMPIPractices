@@ -1,13 +1,3 @@
-Num lines per worker: 20000
-Num lines per worker: 20000
-Num lines per worker: 20000
-Num lines per worker: 20000
-worker 1 num_movies 290
-worker 2 num_movies 289
-worker 3 num_movies 289
-Rank 1 received 580
-Rank 3 received 578
-Rank 2 received 578
 Puesto 1: Película 408, valorada 93 veces. Valoración media: 4.559140
 Puesto 2: Película 169, valorada 97 veces. Valoración media: 4.525773
 Puesto 3: Película 318, valorada 237 veces. Valoración media: 4.489451

@@ -137,7 +137,7 @@ int main(int argc, char **argv){
 
     // Split lines that have been read by each process
     std::vector<std::string> lines = splitLines(buffer);
-    printf("Num lines per worker: %d\n", static_cast<int>(lines.size()));
+    //printf("Num lines per worker: %d\n", static_cast<int>(lines.size()));
 
     // Split each line into: idUser, idMovie, rating and store that values in Item struct.
     std::vector<Item> items = getItems(lines);
@@ -203,7 +203,7 @@ int main(int argc, char **argv){
 
         // Send data to every process
         for(int i = 1; i < movies_workers.size(); i++){
-            printf("worker %d num_movies %d\n", i, movies_workers[i].size());
+            //printf("worker %d num_movies %d\n", i, movies_workers[i].size());
 
             int countToTransfer = movies_workers[i].size() * 2; // Including both elements in pairs
             int * transferData = new int[countToTransfer];
@@ -216,6 +216,9 @@ int main(int argc, char **argv){
             // Send to node the number of movies that have to look for
             MPI_Send(&countToTransfer, 1, MPI_INT, i, 0, MPI_COMM_WORLD); // Ssend to wait for the receipment
             MPI_Send(transferData, countToTransfer, MPI_INT, i, 0, MPI_COMM_WORLD);
+
+            // Free memory
+            delete [] transferData;
         }
     }
 
@@ -228,7 +231,7 @@ int main(int argc, char **argv){
 
         // Receive number of movies to look for (indices) and evaluations of each (amount of lines that must be read again)
         MPI_Recv(&moviesToCompute, 1, MPI_INT, ROOT, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-        printf("Rank %d received %d\n", rank, moviesToCompute);
+        // printf("Rank %d received %d\n", rank, moviesToCompute);
 
         // recvData contains index, numRatings for each movie. 
         int * recvData = new int[moviesToCompute];
@@ -266,6 +269,7 @@ int main(int argc, char **argv){
 
         // Free memory
         delete [] calculated;
+        delete [] recvData;
     }
 
     if (rank == ROOT){
@@ -287,6 +291,9 @@ int main(int argc, char **argv){
         // Free memory 
         delete [] calculatedMovies;
     }
+
+    // Free memory
+    delete [] buffer;
 
     // Close file
     MPI_File_close(&file);
