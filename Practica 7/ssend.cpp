@@ -3,7 +3,7 @@
 
 /*  Practice 7  */
 
-#define SIZE 10
+#define SIZE 1000
 #define BOUNDARY 25
 
 int main(int argc, char **argv){
