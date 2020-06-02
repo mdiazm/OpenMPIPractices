@@ -22,6 +22,10 @@ struct Item {
     static bool compare(const Item &a, const Item &b){
         return a.idMovie < b.idMovie;
     };
+
+    static bool compareByRating(const Item &a, const Item &b){
+        return a.rating > b.rating;
+    };
 };
 
 void printString(char* str, int count){
@@ -233,6 +237,11 @@ int main(int argc, char **argv){
 
         // The real number of movies to compute is moviesToCompute/2 because both index in itemsRecv and number of movies are included.
         int numberOfMovies = moviesToCompute/2;
+
+        // Movies to be sended to ROOT after being calculated
+        Item * calculated = new Item[numberOfMovies];
+
+        // Calculate mean score for each received movie
         for(int i = 0; i < numberOfMovies; i++){
             int index = recvData[i * 2];
             int numberOfRatings = recvData[i * 2 + 1];
@@ -244,9 +253,41 @@ int main(int argc, char **argv){
 
             // Calculate mean for this movie
             summa /= numberOfRatings;
-            printf("Movie %d scored %d mean %f\n", movieId, numberOfRatings, summa);
+            
+            // Store that movie
+            calculated[i].idMovie = movieId;
+            calculated[i].rating = summa;
+            calculated[i].idUser = numberOfRatings;
         }
+
+        // Send movies to root proc (only ten first)
+        std::sort(calculated, calculated + numberOfMovies, Item::compareByRating);
+        MPI_Send(calculated, 10, itemType, ROOT, 0, MPI_COMM_WORLD);
+
+        // Free memory
+        delete [] calculated;
     }
+
+    if (rank == ROOT){
+        // Receive 10 movies from each process
+        int totalReceivedMovies = 10 * (size - 1);
+        Item * calculatedMovies = new Item[totalReceivedMovies]; // 10 movies from each worker except root process.
+        for(int i = 1; i < size; i++){
+            MPI_Recv(calculatedMovies + (i-1) * 10, 10, itemType, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        }
+
+        // Sort received movies and select ten first
+        std::sort(calculatedMovies, calculatedMovies + totalReceivedMovies, Item::compareByRating);
+
+        // Show ten first movies sorted descending by avg rating
+        for(int i = 0; i < 10; i++){
+            printf("Puesto %d: Película %d, valorada %d veces. Valoración media: %f\n", i + 1, calculatedMovies[i].idMovie, calculatedMovies[i].idUser, calculatedMovies[i].rating);
+        }
+
+        // Free memory 
+        delete [] calculatedMovies;
+    }
+
     // Close file
     MPI_File_close(&file);
 
