@@ -3,7 +3,7 @@
 
 /*  Practice 7  */
 
-#define SIZE 1000
+#define SIZE 20
 #define BOUNDARY 25
 
 int main(int argc, char **argv){
@@ -19,44 +19,19 @@ int main(int argc, char **argv){
     // Data
     int matrix[SIZE][SIZE];
 
-    // Only process with rank == 0 initializes the matrix
-    if (rank == 0){
-        // Initialize
-        matrix[0][0] = 0;
-    }
-
+    // Initialize first element
+    matrix[0][0] = 0;
+    
     // Loop
     for(int i = 0; ; i++){
-        
-        if (rank == 0){
-            // Process with rank 0 starts sending, left ones starts receiving
-            MPI_Send(matrix, SIZE * SIZE, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-            printf("Proceso %d envía dato %d al proceso %d\n", rank, matrix[0][0], rank + 1);
+        // Process with rank 0 starts sending, left ones starts receiving
+        MPI_Send(matrix, SIZE * SIZE, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+        printf("Proceso %d envía dato %d al proceso %d\n", rank, matrix[0][0], rank + 1);
 
-            MPI_Recv(matrix, SIZE * SIZE, MPI_INT, size - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("Proceso %d recibe dato %d del proceso %d\n", rank, matrix[0][0], size -1);
+        MPI_Recv(matrix, SIZE * SIZE, MPI_INT, (rank - 1) % size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        printf("Proceso %d recibe dato %d del proceso %d\n", rank, matrix[0][0], size -1);
 
-            matrix[0][0]++;
-        } else if (rank == (size - 1)){
-            // Process with last rank sends to first process
-            MPI_Recv(matrix, SIZE * SIZE, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("Proceso %d recibe dato %d del proceso %d\n", rank, matrix[0][0], rank - 1);
-
-            matrix[0][0]++;
-
-            MPI_Send(matrix, SIZE * SIZE, MPI_INT, 0, 0, MPI_COMM_WORLD);
-            printf("Proceso %d envía dato %d al proceso %d\n", rank, matrix[0][0], 0);
-        } else {
-            // Rank belongs to [1, size-2]
-            MPI_Recv(matrix, SIZE * SIZE, MPI_INT, rank - 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-            printf("Proceso %d recibe dato %d del proceso %d\n", rank, matrix[0][0], rank - 1);
-
-            matrix[0][0]++;
-
-            MPI_Send(matrix, SIZE * SIZE, MPI_INT, rank + 1, 0, MPI_COMM_WORLD);
-            printf("Proceso %d envía dato %d al proceso %d\n", rank, matrix[0][0], rank + 1); 
-        }
-
+        matrix[0][0]++;
 
         // When boundary is surpassed, finalize execution
         if (matrix[0][0] >= BOUNDARY){
