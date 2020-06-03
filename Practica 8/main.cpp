@@ -125,6 +125,13 @@ int main(int argc, char **argv){
     MPI_Offset fileSize;
     MPI_File_get_size(file, &fileSize);
 
+    // If num lines is not divisible by workers, abort
+    if (NUMLINES % size != 0){
+        printf("Number of workers have to divide %d. Execution finalizes.\n", NUMLINES);
+        MPI_Finalize();
+        return 0;
+    }
+
     // Read file
     int linesPerWorker = NUMLINES / size;
     int numBytes = linesPerWorker * CHAR_PER_LINE * sizeof(char); // Number of bytes handled by each process
