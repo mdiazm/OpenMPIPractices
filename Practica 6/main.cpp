@@ -73,7 +73,7 @@ int main(int argc, char **argv){
                 sendData = recvData * 2;
                 MPI_Send(&sendData, 1, MPI_INT, ranks[1], 0, cartComm);      
 
-                printf("%d: Soy el proceso %d en fila %d y columna %d. Recibo %d y envío %d al proceso %d\n", i+1, rank, coords[1], coords[0], recvData, sendData, ranks[1]);    
+                printf("%d: Soy el proceso %d en fila %d y columna %d. Recibo %d y no envío nada\n", i+1, rank, coords[1], coords[0], recvData);    
                 break;
         }
 

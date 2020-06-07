@@ -24,11 +24,18 @@ int main(int argc, char **argv){
 
     // Loop
     for(int i = 0; ; i++){
+        MPI_Request request;
+        MPI_Status status;
+
         // Process with rank 0 starts sending, left ones starts receiving
-        MPI_Send(matrix, SIZE * SIZE, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+        MPI_Issend(matrix, SIZE * SIZE, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD, &request);
+
+
         printf("Proceso %d envía dato %d al proceso %d\n", rank, matrix[0][0], rank + 1);
 
-        MPI_Recv(matrix, SIZE * SIZE, MPI_INT, (rank - 1) % size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+        MPI_Irecv(matrix, SIZE * SIZE, MPI_INT, (rank - 1) % size, 0, MPI_COMM_WORLD, &request);
+        MPI_Wait(&request, &status);
+        //MPI_Recv(matrix, SIZE * SIZE, MPI_INT, (rank - 1) % size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
         printf("Proceso %d recibe dato %d del proceso %d\n", rank, matrix[0][0], size -1);
 
         matrix[0][0]++;

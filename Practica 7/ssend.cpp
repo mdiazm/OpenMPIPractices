@@ -3,7 +3,7 @@
 
 /*  Practice 7  */
 
-#define SIZE 40
+#define SIZE 20
 #define BOUNDARY 25
 
 int main(int argc, char **argv){
@@ -25,7 +25,7 @@ int main(int argc, char **argv){
     // Loop
     for(int i = 0; ; i++){
         // Process with rank 0 starts sending, left ones starts receiving
-        MPI_Send(matrix, SIZE * SIZE, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
+        MPI_Ssend(matrix, SIZE * SIZE, MPI_INT, (rank + 1) % size, 0, MPI_COMM_WORLD);
         printf("Proceso %d envía dato %d al proceso %d\n", rank, matrix[0][0], rank + 1);
 
         MPI_Recv(matrix, SIZE * SIZE, MPI_INT, (rank - 1) % size, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);

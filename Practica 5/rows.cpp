@@ -4,6 +4,8 @@
 
 #define ROOT_PROC 0
 
+/*  Second version as mentioned in the docs  */
+
 // Treat matrix as one-dimensional arrays.
 // Matrix definition: Square matrix
 const int SIZE = 10;

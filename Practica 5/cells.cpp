@@ -4,9 +4,7 @@
 
 #define ROOT_PROC 0
 
-// Matrix definition
-//const int ROWS = 10, COLS = 10;
-//int A[ROWS][COLS], B[ROWS][COLS], C[ROWS][COLS];
+/*  First version as mentioned in the docs */
 
 const int SIZE = 10;
 int A[SIZE][SIZE], B[SIZE][SIZE], C[SIZE * SIZE];
