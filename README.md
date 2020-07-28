@@ -1,6 +1,6 @@
 # OpenMPIPractices
 
-Some exercises in C++ for Open Message Passing (OpenMPI), for example: 
+Some exercises in C++ for Open Message Passing Interface (OpenMPI), for example: 
 
  - PI approximation using Monte Carlo Algorithm
  - Get maximum in a set of numbers
